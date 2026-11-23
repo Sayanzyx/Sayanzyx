@@ -50,8 +50,12 @@ function frame(h, title, css, defs, body, font) {
   );
 }
 
+const LANGS = 'languages(first:10,orderBy:{field:SIZE,direction:DESC}){edges{size node{name}}}';
+
 const QUERY = `query($login:String!){user(login:$login){
-  repositories(ownerAffiliations:OWNER,isFork:false,privacy:PUBLIC,first:100){totalCount nodes{stargazerCount languages(first:10,orderBy:{field:SIZE,direction:DESC}){edges{size node{name}}}}}
+  publicRepos:repositories(ownerAffiliations:OWNER,isFork:false,privacy:PUBLIC){totalCount}
+  owned:repositories(ownerAffiliations:OWNER,isFork:false,first:100){nodes{nameWithOwner ${LANGS}}}
+  contributed:repositoriesContributedTo(first:100,includeUserRepositories:true,contributionTypes:[COMMIT,PULL_REQUEST,REPOSITORY]){nodes{nameWithOwner ${LANGS}}}
   contributionsCollection{contributionCalendar{totalContributions weeks{contributionDays{date contributionCount weekday}}}}
 }}`;
 
@@ -62,17 +66,21 @@ async function fetchData(login, token) {
     body: JSON.stringify({ query: QUERY, variables: { login } })
   });
   const json = await res.json();
-  if (!res.ok || json.errors) throw new Error(JSON.stringify(json.errors || json));
+  if (!res.ok || !json.data?.user) throw new Error(JSON.stringify(json.errors || json));
   const user = json.data.user;
   const cal = user.contributionsCollection.contributionCalendar;
+  const repos = new Map();
+  for (const repo of [...(user.owned?.nodes || []), ...(user.contributed?.nodes || [])]) {
+    if (repo) repos.set(repo.nameWithOwner, repo);
+  }
   const langs = new Map();
-  for (const repo of user.repositories.nodes) {
+  for (const repo of repos.values()) {
     for (const e of repo.languages.edges) langs.set(e.node.name, (langs.get(e.node.name) || 0) + e.size);
   }
   return {
     total: cal.totalContributions,
     weeks: cal.weeks.map((w) => w.contributionDays.map((d) => ({ date: d.date, count: d.contributionCount, weekday: d.weekday }))),
-    repos: user.repositories.totalCount,
+    repos: user.publicRepos.totalCount,
     languages: [...langs.entries()].sort((a, b) => b[1] - a[1])
   };
 }
