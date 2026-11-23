@@ -4,8 +4,8 @@
 
 <br><br>
 
-<a href="https://www.linkedin.com/in/SEU-USUARIO"><img src="./assets/btn-linkedin.svg" height="44" alt="LinkedIn"></a>&nbsp;
-<a href="mailto:SEU-EMAIL"><img src="./assets/btn-email.svg" height="44" alt="E-mail"></a>
+<a href="https://www.linkedin.com/in/bernardo-murta"><img src="./assets/btn-linkedin.svg" height="44" alt="LinkedIn"></a>&nbsp;
+<a href="mailto:beramurta019@gmail.com"><img src="./assets/btn-email.svg" height="44" alt="E-mail"></a>
 
 <br><br>
 
