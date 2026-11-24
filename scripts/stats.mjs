@@ -54,8 +54,8 @@ const LANGS = 'languages(first:10,orderBy:{field:SIZE,direction:DESC}){edges{siz
 
 const QUERY = `query($login:String!){user(login:$login){
   publicRepos:repositories(ownerAffiliations:OWNER,isFork:false,privacy:PUBLIC){totalCount}
-  owned:repositories(ownerAffiliations:OWNER,isFork:false,first:100){nodes{nameWithOwner isPrivate ${LANGS}}}
-  contributed:repositoriesContributedTo(first:100,includeUserRepositories:true,contributionTypes:[COMMIT,PULL_REQUEST,REPOSITORY]){nodes{nameWithOwner isPrivate owner{__typename} ${LANGS}}}
+  owned:repositories(ownerAffiliations:OWNER,isFork:false,first:100){nodes{nameWithOwner ${LANGS}}}
+  contributed:repositoriesContributedTo(first:100,includeUserRepositories:true,contributionTypes:[COMMIT,PULL_REQUEST,REPOSITORY]){nodes{nameWithOwner ${LANGS}}}
   contributionsCollection{contributionCalendar{totalContributions weeks{contributionDays{date contributionCount weekday}}}}
 }}`;
 
@@ -74,20 +74,10 @@ async function fetchData(login, token) {
     if (repo) repos.set(repo.nameWithOwner, repo);
   }
   const all = [...repos.values()];
-  console.log(
-    JSON.stringify({
-      proprios: user.owned?.nodes?.length || 0,
-      contribuidos: user.contributed?.nodes?.length || 0,
-      privados: all.filter((r) => r.isPrivate).length,
-      deOrganizacoes: (user.contributed?.nodes || []).filter((r) => r?.owner?.__typename === 'Organization').length,
-      erros: (json.errors || []).map((e) => e.message)
-    })
-  );
   const langs = new Map();
   for (const repo of all) {
     for (const e of repo.languages.edges) langs.set(e.node.name, (langs.get(e.node.name) || 0) + e.size);
   }
-  console.log(JSON.stringify([...langs.entries()].sort((a, b) => b[1] - a[1])));
   return {
     total: cal.totalContributions,
     weeks: cal.weeks.map((w) => w.contributionDays.map((d) => ({ date: d.date, count: d.contributionCount, weekday: d.weekday }))),
